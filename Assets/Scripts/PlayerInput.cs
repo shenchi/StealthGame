@@ -8,11 +8,13 @@ public class PlayerInput : MonoBehaviour
     private Character ch;
 
     private int floorId;
+    private int doorId;
 
     // Use this for initialization
     void Start()
     {
         floorId = LayerMask.NameToLayer("Floor");
+        doorId = LayerMask.NameToLayer("Door");
 
         ch = GetComponent<Character>();
     }
@@ -24,17 +26,29 @@ public class PlayerInput : MonoBehaviour
 
         GameObject target = null;
         RaycastHit hitInfo;
-        if (Physics.Raycast(mouseRay, out hitInfo))
+        if (Physics.Raycast(mouseRay, out hitInfo, float.MaxValue, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore))
         {
             target = hitInfo.collider.gameObject;
         }
-
-
+        
         if (Input.GetMouseButtonDown(0))
         {
-            if (null != target && target.layer == floorId)
+            if (null != target)
             {
-                ch.MoveTo(hitInfo.point);
+                if (target.layer == floorId)
+                    ch.MoveTo(hitInfo.point);
+                else if (target.layer == doorId)
+                {
+                    var door = target.GetComponent<Door>();
+                    if (!ch.Interact(door))
+                    {
+                        RaycastHit floorHitInfo;
+                        if (Physics.Raycast(mouseRay, out floorHitInfo, float.MaxValue, 1 << floorId))
+                        {
+                            ch.MoveTo(floorHitInfo.point);
+                        }
+                    }
+                }
             }
         }
 
